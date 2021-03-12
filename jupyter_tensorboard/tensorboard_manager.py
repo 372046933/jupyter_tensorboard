@@ -134,6 +134,7 @@ class TensorboardManger(dict):
         LOGGER.info('logdir:%s notebook_dir:%s', logdir, notebook_dir)
         if not os.path.isabs(logdir) and notebook_dir:
             logdir = os.path.join(notebook_dir, logdir)
+            logdir = 'hdfs://default' + logdir
 
         if logdir not in self._logdir_dict:
             purge_orphaned_data = True
