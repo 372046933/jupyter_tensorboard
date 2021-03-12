@@ -1,17 +1,14 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) 2017-2019, Shengpeng Liu.  All rights reserved.
 # Copyright (c) 2020-2021, NVIDIA CORPORATION. All rights reserved.
-
-import os
-import sys
-import time
 import inspect
 import itertools
+import os
+import sys
+import traitlets.log
 from collections import namedtuple
-import logging
 
-import six
-
+LOGGER = traitlets.log.get_logger()
 sys.argv = ["tensorboard"]
 
 from tensorboard.backend import application   # noqa
@@ -54,14 +51,15 @@ try:
                         "--reload_interval", str(reload_interval),
                         "--purge_orphaned_data", str(purge_orphaned_data),
                    ]
+            LOGGER.info('argv: %s', argv)
             tensorboard = program.TensorBoard(get_plugins())
             tensorboard.configure(argv)
 
             if ( hasattr(application, 'standard_tensorboard_wsgi') and inspect.isfunction(application.standard_tensorboard_wsgi)):
-                logging.debug("TensorBoard 1.10 or above series detected")
+                LOGGER.debug("TensorBoard 1.10 or above series detected")
                 standard_tensorboard_wsgi = application.standard_tensorboard_wsgi
             else:
-                logging.debug("TensorBoard 2.3 or above series detected")
+                LOGGER.debug("TensorBoard 2.3 or above series detected")
                 def standard_tensorboard_wsgi(flags, plugin_loaders, assets_zip_provider):
                     from tensorboard.backend.event_processing import data_ingester
                     ingester = data_ingester.LocalDataIngester(flags)
@@ -74,7 +72,7 @@ try:
                 tensorboard.plugin_loaders,
                 tensorboard.assets_zip_provider))
     else:
-        logging.debug("TensorBoard 0.4.x series detected")
+        LOGGER.debug("TensorBoard 0.4.x series detected")
 
         def create_tb_app(logdir, reload_interval, purge_orphaned_data):
             return manager.add_instance(logdir, application.standard_tensorboard_wsgi(
@@ -94,7 +92,7 @@ except ImportError:
     from tensorboard.plugins.projector import projector_plugin
     from tensorboard.plugins.scalar import scalars_plugin
     from tensorboard.plugins.text import text_plugin
-    logging.debug("Tensorboard 0.3.x series detected")
+    LOGGER.debug("Tensorboard 0.3.x series detected")
 
     _plugins = [
                 core_plugin.CorePlugin,
@@ -133,6 +131,7 @@ class TensorboardManger(dict):
                 return name
 
     def new_instance(self, logdir, reload_interval):
+        LOGGER.info('logdir:%s notebook_dir:%s', logdir, notebook_dir)
         if not os.path.isabs(logdir) and notebook_dir:
             logdir = os.path.join(notebook_dir, logdir)
 
